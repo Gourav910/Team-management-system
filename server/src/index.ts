@@ -28,7 +28,7 @@ app.use(express.json({ limit: "1mb" }));
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.use("/api/auth", authRouter);
- app.use("/api/me", meRouter);
+app.use("/api/me", meRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/projects", projectsRouter);
 app.use("/api", tasksRouter);

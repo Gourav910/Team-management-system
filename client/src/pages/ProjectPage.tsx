@@ -96,18 +96,21 @@ export function ProjectPage() {
     setError(null);
     try {
       await loadProject();
-      await loadTasks();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Failed to load project");
     }
-  }, [loadProject, loadTasks, projectId]);
+  }, [loadProject, projectId]);
 
+  // Load project details once on mount
   useEffect(() => {
     void loadAll();
   }, [loadAll]);
 
+  // Re-fetch tasks whenever filters or projectId change
   useEffect(() => {
-    void loadTasks();
+    void loadTasks().catch((e) => {
+      if (e instanceof ApiError) setError(e.message);
+    });
   }, [loadTasks]);
 
   const loadTabData = useCallback(async () => {
@@ -186,11 +189,11 @@ export function ProjectPage() {
   async function patchTask(id: string, body: Record<string, unknown>) {
     setError(null);
     try {
-      await call(`/tasks/${id}`, { method: "PATCH", body: JSON.stringify(body) });
+      const res = await call<{ task: TaskRow }>(`/tasks/${id}`, { method: "PATCH", body: JSON.stringify(body) });
       await loadTasks();
+      // Use the server response to update the drawer — avoids stale state from the pre-fetch snapshot
       if (selectedTask?.id === id) {
-        const updated = tasks.find((t) => t.id === id);
-        if (updated) setSelectedTask({ ...updated, ...body } as TaskRow);
+        setSelectedTask(res.task);
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not update task");
