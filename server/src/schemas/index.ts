@@ -51,7 +51,7 @@ export const createTaskSchema = z.object({
   description: z.string().max(8000).optional().default(""),
   status: z.nativeEnum(TaskStatus).optional(),
   priority: z.nativeEnum(TaskPriority).optional(),
-  assigneeId: z.string().cuid().nullable().optional(),
+  assigneeId: z.string().regex(/^[a-f\d]{24}$/i, "Invalid ID").nullable().optional(),
   dueDate: z.coerce.date().nullable().optional(),
 });
 
@@ -60,7 +60,7 @@ export const updateTaskSchema = z.object({
   description: z.string().max(8000).optional(),
   status: z.nativeEnum(TaskStatus).optional(),
   priority: z.nativeEnum(TaskPriority).optional(),
-  assigneeId: z.string().cuid().nullable().optional(),
+  assigneeId: z.string().regex(/^[a-f\d]{24}$/i, "Invalid ID").nullable().optional(),
   dueDate: z.coerce.date().nullable().optional(),
 });
 

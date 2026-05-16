@@ -35,9 +35,9 @@ app.use("/api", tasksRouter);
 app.use("/api", commentsRouter);
 
 const publicDir = path.join(__dirname, "..", "public");
-if (isProd && fs.existsSync(publicDir)) {
+if (fs.existsSync(publicDir)) {
   app.use(express.static(publicDir));
-  app.get("*", (req, res, next) => {
+  app.get("/{*path}", (req, res, next) => {
     if (req.path.startsWith("/api")) return next();
     if (req.path === "/health") return next();
     if (req.method !== "GET" && req.method !== "HEAD") return next();
@@ -57,14 +57,24 @@ app.use((err: unknown, req: express.Request, res: express.Response, _next: expre
   return res.status(500).json(body);
 });
 
+async function main() {
 try {
-  await prisma.$connect();
+  await prisma.$connect(); 
+  console.log("Database connection successful"); 
 } catch (e) {
-  console.error("Database connection failed. Set DATABASE_URL (PostgreSQL) and run: npx prisma migrate deploy");
+  console.error("Database connection failed. Set DATABASE_URL (MongoDB) and run: npx prisma db push");
   console.error(e);
   process.exit(1);
 }
+}
 
-app.listen(PORT, () => {
-  console.log(`Listening on port ${PORT} (${isProd ? "production" : "development"})`);
-});
+main()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Listening on port ${PORT} (${isProd ? "production" : "development"})`);
+    });
+  })
+  .catch((e) => {
+    console.error("Failed to start server:", e);
+    process.exit(1);
+  });

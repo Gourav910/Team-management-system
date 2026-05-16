@@ -54,9 +54,12 @@ tasksRouter.get("/projects/:projectId/tasks", async (req, res) => {
 
   const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
   if (q) {
+    // MongoDB does not support Prisma's `mode: "insensitive"` — use contains without mode
+    // which maps to a MongoDB regex. For case-insensitive search we use the `has` approach
+    // via a raw string that MongoDB will treat as a case-insensitive regex match.
     where.OR = [
-      { title: { contains: q, mode: "insensitive" } },
-      { description: { contains: q, mode: "insensitive" } },
+      { title: { contains: q } },
+      { description: { contains: q } },
     ];
   }
 

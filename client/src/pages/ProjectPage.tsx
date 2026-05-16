@@ -234,20 +234,32 @@ export function ProjectPage() {
 
   async function archiveProject() {
     if (!projectId || !confirm("Archive this project? Tasks stay read-only until restored.")) return;
-    await call(`/projects/${projectId}/archive`, { method: "POST" });
-    await loadProject();
+    try {
+      await call(`/projects/${projectId}/archive`, { method: "POST" });
+      await loadProject();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not archive project");
+    }
   }
 
   async function unarchiveProject() {
     if (!projectId) return;
-    await call(`/projects/${projectId}/unarchive`, { method: "POST" });
-    await loadProject();
+    try {
+      await call(`/projects/${projectId}/unarchive`, { method: "POST" });
+      await loadProject();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not restore project");
+    }
   }
 
   async function leaveProject() {
     if (!projectId || !confirm("Leave this project?")) return;
-    await call(`/projects/${projectId}/leave`, { method: "POST" });
-    nav("/projects");
+    try {
+      await call(`/projects/${projectId}/leave`, { method: "POST" });
+      nav("/projects");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not leave project");
+    }
   }
 
   const memberOptions = useMemo(() => project?.members ?? [], [project]);
@@ -463,12 +475,15 @@ export function ProjectPage() {
                         <select
                           className="input"
                           value={m.role}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const newRole = e.target.value;
                             call(`/projects/${projectId}/members/${m.userId}`, {
                               method: "PATCH",
-                              body: JSON.stringify({ role: e.target.value }),
-                            }).then(() => loadProject())
-                          }
+                              body: JSON.stringify({ role: newRole }),
+                            }).then(() => loadProject()).catch((err) =>
+                              setError(err instanceof ApiError ? err.message : "Could not change role")
+                            );
+                          }}
                           disabled={m.userId === user?.id && soleAdmin && m.role === "ADMIN"}
                         >
                           <option value="ADMIN">ADMIN</option>
@@ -486,9 +501,11 @@ export function ProjectPage() {
                             className="btn btn-danger"
                             onClick={() => {
                               if (confirm("Remove member?")) {
-                                call(`/projects/${projectId}/members/${m.userId}`, { method: "DELETE" }).then(() =>
-                                  loadProject()
-                                );
+                                call(`/projects/${projectId}/members/${m.userId}`, { method: "DELETE" })
+                                  .then(() => loadProject())
+                                  .catch((err) =>
+                                    setError(err instanceof ApiError ? err.message : "Could not remove member")
+                                  );
                               }
                             }}
                           >
